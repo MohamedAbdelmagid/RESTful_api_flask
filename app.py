@@ -1,5 +1,5 @@
 #!flask/bin/python
-from flask import Flask, jsonify, abort
+from flask import Flask, jsonify, abort, make_response
 
 app = Flask(__name__)
 
@@ -35,6 +35,10 @@ def get_task_with_id(task_id):
         abort(404)
 
     return jsonify({'task': task[0]})
+
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'There is no task with this id'}))
 
 if __name__ == '__main__':
     app.run(debug=True)
