@@ -1,5 +1,5 @@
 #!flask/bin/python
-from flask import Flask, jsonify, abort, make_response
+from flask import Flask, jsonify, abort, make_response, request
 
 app = Flask(__name__)
 
@@ -36,9 +36,25 @@ def get_task_with_id(task_id):
 
     return jsonify({'task': task[0]})
 
+@app.route('/todo/api/v1.0/tasks', methods=['POST'])
+def create_task():
+    # If there is someting wrong with the sent json or it has no title then abort
+    if not request.json or not 'title' in request.json:
+        abort(404)
+
+    task = {
+        'id': tasks[-1]['id'] + 1,
+        'title': request.json['title'],
+        'description': request.json.get('description', ""),
+        'done': False
+    }
+    tasks.append(task)
+
+    return jsonify({'task': task}), 201
+
 @app.errorhandler(404)
 def not_found(error):
-    return make_response(jsonify({'error': 'There is no task with this id'}))
+    return make_response(jsonify({'error': 'There is no task with this id, or there is something wrong with your new task for exmaple "missing title"!!'}))
 
 if __name__ == '__main__':
     app.run(debug=True)
