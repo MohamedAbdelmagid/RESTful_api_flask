@@ -1,5 +1,6 @@
 #!flask/bin/python
 from flask import Flask, jsonify, abort, make_response, request, url_for
+from flask_httpauth import HTTPBasicAuth
 
 app = Flask(__name__)
 
@@ -24,6 +25,19 @@ tasks = [
     }
 ]
 
+
+auth = HTTPBasicAuth()
+
+@auth.get_password
+def get_password(username):
+    if username == 'mohamed':
+        return 'admin'
+    return None
+
+@auth.error_handler
+def unauthorized():
+    return make_response(jsonify({'error': 'Unauthorized access'}), 401)
+
 # This funtion make another version of task with uri field
 def add_uri_to_task(task):
     task_with_uri = {}
@@ -46,6 +60,7 @@ def get_task_with_id(task_id):
     return jsonify({'task': add_uri_to_task(task[0])})
 
 @app.route('/todo/api/v1.0/tasks', methods=['POST'])
+@auth.login_required
 def create_task():
     # If there is something wrong with the sent json or it has no title then abort
     if not request.json or not 'title' in request.json:
@@ -62,6 +77,7 @@ def create_task():
     return jsonify({'task': add_uri_to_task(task)}), 201
    
 @app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['PUT'])
+@auth.login_required
 def update_task(task_id):
     task = [task for task in tasks if task['id'] == task_id]
     if len(task) == 0:  # if there is no task with this id
@@ -83,6 +99,7 @@ def update_task(task_id):
     return jsonify({'task': add_uri_to_task(task[0])})
 
 @app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['DELETE'])
+@auth.login_required
 def delete_task(task_id):
     task = [task for task in tasks if task['id'] == task_id]
     if len(task) == 0:
