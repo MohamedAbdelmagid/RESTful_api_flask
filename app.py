@@ -36,7 +36,8 @@ def get_password(username):
 
 @auth.error_handler
 def unauthorized():
-    return make_response(jsonify({'error': 'Unauthorized access'}), 401)
+    # return 403 instead of 401 to prevent browsers from displaying the default auth dialog
+    return make_response(jsonify({'error': 'Unauthorized access'}), 403)
 
 # This funtion make another version of task with uri field
 def add_uri_to_task(task):
