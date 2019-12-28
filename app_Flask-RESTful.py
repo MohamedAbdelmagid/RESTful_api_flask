@@ -1,8 +1,12 @@
-from flask import Flask, request, url_for, abort
+from flask import Flask, request, url_for, abort, render_template
 from flask_restful import Resource, Api, reqparse, fields, marshal
+from flask_httpauth import HTTPBasicAuth
 
 app = Flask(__name__)
 api = Api(app)
+
+auth = HTTPBasicAuth()
+
 
 tasks = [
     {
@@ -42,6 +46,23 @@ task_fields = {
     'uri': fields.Url('task'),
 }
 
+users = {
+    "john": "hello",
+    "mohamed": "admin"
+}
+
+@auth.get_password
+def get_pw(username):
+    if username in users:
+        return users.get(username)
+    return None
+
+
+@app.route('/', methods=['GET'])
+@auth.login_required
+def index():
+    return render_template('index.html', username=auth.username())
+
 class TasksAPI(Resource):
 
     def __init__(self):
@@ -54,7 +75,8 @@ class TasksAPI(Resource):
 
     def get(self):
         return {'tasks': [marshal(task, task_fields) for task in tasks]}
-
+        
+    @auth.login_required
     def post(self):
         args = self.reqparse.parse_args()
         task = {
@@ -82,6 +104,7 @@ class TaskAPI(Resource):
         task = get_task_with_id(id)
         return {'task': marshal(task, task_fields)}
 
+    @auth.login_required
     def put(self, id):
         task = get_task_with_id(id)
 
@@ -92,12 +115,13 @@ class TaskAPI(Resource):
 
         return {'task': marshal(task, task_fields)}
 
+    @auth.login_required
     def delete(self, id):
         task = get_task_with_id(id)
         tasks.remove(task)
         print(tasks)
 
-        return {'Removed': True, 'Task': task['title']}
+        return {'Removed': True, 'Task': task['title']}, 204
 
 api.add_resource(TasksAPI, '/todo/api/v1.0/tasks', endpoint='tasks')
 api.add_resource(TaskAPI, '/todo/api/v1.0/tasks/<int:id>', endpoint='task')
