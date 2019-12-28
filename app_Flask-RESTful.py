@@ -1,5 +1,5 @@
 from flask import Flask, request, url_for, abort
-from flask_restful import Resource, Api, reqparse
+from flask_restful import Resource, Api, reqparse, fields, marshal
 
 app = Flask(__name__)
 api = Api(app)
@@ -34,6 +34,14 @@ def get_task_with_id(id):
     
     return task
 
+task_fields = {
+    'id': fields.Integer,
+    'title': fields.String,
+    'description': fields.String,
+    'done': fields.Boolean,
+    'uri': fields.Url('task'),
+}
+
 class TasksAPI(Resource):
 
     def __init__(self):
@@ -45,7 +53,7 @@ class TasksAPI(Resource):
         super(TasksAPI, self).__init__()
 
     def get(self):
-        return {'task': [task for task in tasks]}
+        return {'tasks': [marshal(task, task_fields) for task in tasks]}
 
     def post(self):
         args = self.reqparse.parse_args()
@@ -57,7 +65,7 @@ class TasksAPI(Resource):
         }
         tasks.append(task)
 
-        return {'task': task}, 201
+        return {'task':  marshal(task, task_fields)}, 201
 
 class TaskAPI(Resource):
 
@@ -72,7 +80,7 @@ class TaskAPI(Resource):
 
     def get(self, id):
         task = get_task_with_id(id)
-        return {'task': task}
+        return {'task': marshal(task, task_fields)}
 
     def put(self, id):
         task = get_task_with_id(id)
@@ -82,7 +90,7 @@ class TaskAPI(Resource):
             if value != None:
                 task[key] = value
 
-        return {'task': task}
+        return {'task': marshal(task, task_fields)}
 
     def delete(self, id):
         task = get_task_with_id(id)
