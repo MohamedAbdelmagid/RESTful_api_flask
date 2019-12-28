@@ -3,3 +3,4 @@ todoApi-env/
 .vscode/
 test.py
 test2.py
+*.pyc
